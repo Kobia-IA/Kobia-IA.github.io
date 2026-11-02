@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quá Trình Học Tập | Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Nút quay lại trang chủ -->
+        <a href="index.html" class="back-btn" title="Quay lại trang chính">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+
+        <!-- Nút chuyển đổi Dark/Light Mode -->
+        <button id="theme-toggle" class="theme-btn" title="Đổi giao diện">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+
+        <header class="profile">
+            <h1 class="name">Hành Trình Học Tập</h1>
+            <p class="role">Từ nền tảng phổ thông đến chuyên ngành An ninh mạng</p>
+        </header>
+
+        <!-- Dòng thời gian (Timeline) -->
+        <main class="timeline">
+            <!-- Đại học 2 (Hiện tại) -->
+            <div class="timeline-item current">
+                <div class="timeline-dot"></div>
+                <span class="timeline-date">2026 - Hiện tại</span>
+                <h3 class="timeline-title">Đại học 2 — Ngành An ninh mạng</h3>
+                <p class="timeline-school">Trường Đại học Đồng Tháp</p>
+                <p class="timeline-desc">Xét tuyển lại để theo đuổi đúng định hướng công nghệ tại quê nhà. Tập trung chuyên sâu vào an toàn thông tin, quản trị mạng, hệ điều hành Linux và phát triển phần mềm.</p>
+            </div>
+
+            <!-- Đại học 1 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <span class="timeline-date">2025 - 2026</span>
+                <h3 class="timeline-title">Đại học 1 — Trải nghiệm & Bước ngoặt</h3>
+                <p class="timeline-school">Trường Đại học Xây Dựng Miền Tây</p>
+                <p class="timeline-desc">Giai đoạn tự lập xa nhà và làm quen với môi trường đại học. Với chuyên nghành Kỹ Thuật Phần Mềm, quyết định dừng lại để định hướng lại lộ trình học tập phù hợp và thực tế hơn.</p>
+            </div>
+
+            <!-- Cấp 3 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <span class="timeline-date">2022 - 2025</span>
+                <h3 class="timeline-title">Trung học Phổ thông (Cấp 3)</h3>
+                <p class="timeline-school">Trường THPT Đốc Binh Kiều</p>
+                <p class="timeline-desc">Hoàn thành chương trình phổ thông, định hình niềm đam mê với phần cứng máy tính, mạng máy tính và lập trình cơ bản.</p>
+            </div>
+
+            <!-- Cấp 2 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <span class="timeline-date">2018 - 2022</span>
+                <h3 class="timeline-title">Trung học Cơ sở (Cấp 2)</h3>
+                <p class="timeline-school">Trường THCS Đốc Binh Kiều</p>
+                <p class="timeline-desc">Giai đoạn rèn luyện các môn tự nhiên và bắt đầu tiếp xúc, tìm tòi về công nghệ và máy tính.</p>
+            </div>
+
+            <!-- Cấp 1 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <span class="timeline-date">2013 - 2018</span>
+                <h3 class="timeline-title">Tiểu học (Cấp 1)</h3>
+                <p class="timeline-school">Trường Tiểu học Đốc Binh Kiều 3</p>
+                <p class="timeline-desc">Những năm tháng học tập đầu tiên</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2026. Thiết kế tối giản & thực dụng.</p>
+        </footer>
+    </div>
+
+    <!-- Script đồng bộ giao diện Sáng/Tối giữa các trang -->
+    <script>
+        const toggleBtn = document.getElementById('theme-toggle');
+        const icon = toggleBtn.querySelector('i');
+
+        // Kiểm tra chế độ đã lưu từ trang trước
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+            icon.classList.replace('fa-moon', 'fa-sun');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            icon.classList.replace(isLight ? 'fa-moon' : 'fa-sun', isLight ? 'fa-sun' : 'fa-moon');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        });
+    </script>
+</body>
+</html>
