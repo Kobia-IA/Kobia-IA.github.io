@@ -44,7 +44,7 @@
         </button>
 
         <!-- File âm thanh (Đặt file music.mp3 cùng thư mục với index.html) -->
-        <audio id="bg-music" loop preload="auto">
+        <audio id="bg-music" loop preload="auto" muted autoplay>
             <source src="music.mp3" type="audio/mpeg">
         </audio>
     </div>
@@ -323,7 +323,7 @@
                 emailText.innerText = originalText;
             }, 2000);
         }
-        // 7. Xử lý Nhạc nền: Tự động Fade-in âm lượng & Đĩa than xoay
+       // 7. Xử lý Nhạc nền: Chạy ngầm Muted & Bật tiếng Fade-in ngay khi nhích/lăn chuột
         const bgMusic = document.getElementById('bg-music');
         const musicToggle = document.getElementById('music-toggle');
         const vinylDisk = document.getElementById('vinyl-disk');
@@ -331,36 +331,59 @@
         const musicIcon = musicToggle.querySelector('i');
 
         let isMusicPlaying = false;
-        let hasInteracted = false;
+        let isUnlocked = false;
         let fadeTween = null;
-        const TARGET_VOLUME = 0.7; // Âm lượng tối đa (70% để nghe dễ chịu)
+        const TARGET_VOLUME = 0.7; // Âm lượng tối đa 70%
 
-        // Hàm bật nhạc kèm hiệu ứng tăng dần âm lượng bằng GSAP
-        function playMusicWithFadeIn() {
-            bgMusic.volume = 0; // Bắt đầu từ 0
-            bgMusic.play().then(() => {
-                isMusicPlaying = true;
-                hasInteracted = true;
-                vinylDisk.classList.add('playing');
-                musicWidget.classList.add('active');
-                musicIcon.className = 'fa-solid fa-volume-high';
+        // Bước 1: Khởi chạy ngầm ở chế độ tắt tiếng ngay khi tải trang (Trình duyệt luôn cho phép)
+        window.addEventListener('DOMContentLoaded', () => {
+            bgMusic.volume = 0;
+            bgMusic.muted = true;
+            bgMusic.play().catch(() => {});
+        });
 
-                // Dùng GSAP tăng âm lượng mượt mà từ 0 lên 0.7 trong 3.5 giây
-                if (fadeTween) fadeTween.kill();
-                fadeTween = gsap.to(bgMusic, {
-                    volume: TARGET_VOLUME,
-                    duration: 3.5,
-                    ease: "power1.inOut"
+        // Bước 2: Hàm kích hoạt âm thanh và tăng dần âm lượng (Fade-in)
+        function activateSoundWithFadeIn() {
+            if (isMusicPlaying) return;
+
+            bgMusic.muted = false;
+            bgMusic.volume = 0;
+
+            // Nếu nhạc đã chạy ngầm một lúc, tua về 0 để người nghe thưởng thức từ đầu bài
+            if (! isUnlocked) {
+                bgMusic.currentTime = 0;
+            }
+
+            const playAttempt = bgMusic.play();
+            if (playAttempt !== undefined) {
+                playAttempt.then(() => {
+                    // Kiểm tra chắc chắn trình duyệt đã cho phép mở tiếng
+                    if (!bgMusic.paused && !bgMusic.muted) {
+                        isMusicPlaying = true;
+                        isUnlocked = true;
+                        vinylDisk.classList.add('playing');
+                        musicWidget.classList.add('active');
+                        musicIcon.className = 'fa-solid fa-volume-high';
+
+                        // Tăng âm lượng từ 0 lên 70% trong 3.5 giây
+                        if (fadeTween) fadeTween.kill();
+                        fadeTween = gsap.to(bgMusic, {
+                            volume: TARGET_VOLUME,
+                            duration: 3.5,
+                            ease: "power1.inOut"
+                        });
+
+                        // Gỡ bỏ các sự kiện lắng nghe sau khi nhạc đã lên thành công
+                        removeTriggerListeners();
+                    }
+                }).catch(() => {
+                    // Nếu trình duyệt vẫn chặn trên một số thiết bị đặc thù, giữ nguyên listener để bắt nhịp tiếp theo
+                    bgMusic.muted = true;
                 });
-
-                // Gỡ bỏ các sự kiện chờ sau khi đã phát thành công
-                removeInteractionListeners();
-            }).catch(() => {
-                // Trình duyệt chặn autoplay, chờ thao tác đầu tiên của người dùng
-            });
+            }
         }
 
-        // Hàm tắt nhạc kèm hiệu ứng giảm dần âm lượng (Fade-out)
+        // Hàm tắt nhạc thủ công (Fade-out)
         function pauseMusicWithFadeOut() {
             isMusicPlaying = false;
             vinylDisk.classList.remove('playing');
@@ -378,39 +401,47 @@
             });
         }
 
-        // Sự kiện nhấn nút Bật / Tắt thủ công
+        // Nút Bật / Tắt nhạc chủ động
         musicToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            hasInteracted = true;
-            removeInteractionListeners();
+            isUnlocked = true;
+            removeTriggerListeners();
 
             if (isMusicPlaying) {
                 pauseMusicWithFadeOut();
             } else {
-                playMusicWithFadeIn();
+                activateSoundWithFadeIn();
             }
         });
 
-        // Tự động kích hoạt nhạc ngay khi người dùng vào trang hoặc vừa cuộn chuột/click
-        function onFirstUserAction() {
-            if (!hasInteracted && !isMusicPlaying) {
-                playMusicWithFadeIn();
+        // Hàm lắng nghe mọi chuyển động nhỏ nhất: nhích chuột, lăn chuột, cuộn Lenis, chạm cảm ứng
+        function onUserMotion() {
+            if (!isUnlocked && !isMusicPlaying) {
+                activateSoundWithFadeIn();
             }
         }
 
-        function removeInteractionListeners() {
-            window.removeEventListener('wheel', onFirstUserAction);
-            window.removeEventListener('touchstart', onFirstUserAction);
-            window.removeEventListener('click', onFirstUserAction);
-            window.removeEventListener('keydown', onFirstUserAction);
+        function removeTriggerListeners() {
+            window.removeEventListener('mousemove', onUserMotion);
+            window.removeEventListener('pointermove', onUserMotion);
+            window.removeEventListener('wheel', onUserMotion);
+            window.removeEventListener('scroll', onUserMotion);
+            window.removeEventListener('touchstart', onUserMotion);
+            window.removeEventListener('touchmove', onUserMotion);
+            window.removeEventListener('click', onUserMotion);
+            window.removeEventListener('keydown', onUserMotion);
         }
 
-        // Thử phát ngay khi tải trang, nếu trình duyệt chặn sẽ đợi thao tác cuộn đầu tiên
-        window.addEventListener('DOMContentLoaded', playMusicWithFadeIn);
-        window.addEventListener('wheel', onFirstUserAction, { passive: true });
-        window.addEventListener('touchstart', onFirstUserAction, { passive: true });
-        window.addEventListener('click', onFirstUserAction);
-        window.addEventListener('keydown', onFirstUserAction);
+        // Gắn trực tiếp vào cả sự kiện cuộn của Lenis lẫn sự kiện chuột của trình duyệt
+        lenis.on('scroll', onUserMotion);
+        window.addEventListener('mousemove', onUserMotion, { passive: true });
+        window.addEventListener('pointermove', onUserMotion, { passive: true });
+        window.addEventListener('wheel', onUserMotion, { passive: true });
+        window.addEventListener('scroll', onUserMotion, { passive: true });
+        window.addEventListener('touchstart', onUserMotion, { passive: true });
+        window.addEventListener('touchmove', onUserMotion, { passive: true });
+        window.addEventListener('click', onUserMotion, { passive: true });
+        window.addEventListener('keydown', onUserMotion, { passive: true });
     </script>
 </body>
 </html>
