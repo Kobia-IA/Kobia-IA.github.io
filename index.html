@@ -23,7 +23,31 @@
         <span>Lướt để xem</span>
         <i class="fa-solid fa-chevron-down"></i>
     </div>
+    <!-- TRÌNH PHÁT NHẠC NỀN ĐĨA THAN (VINYL PLAYER) -->
+    <div id="music-widget" class="music-widget">
+        <!-- Đĩa than xoay -->
+        <div class="vinyl-disk" id="vinyl-disk">
+            <div class="vinyl-grooves"></div>
+            <img src="avatar.jpg" alt="Music Cover" class="vinyl-cover">
+            <div class="vinyl-center-hole"></div>
+        </div>
 
+        <!-- Thông tin bài hát & Nhạc sĩ (Bạn tự đổi tên theo bài hát của bạn) -->
+        <div class="music-info">
+            <span class="song-title">Hai Thế Giới</span>
+            <span class="song-artist">Wowy ft. Karik</span>
+        </div>
+
+        <!-- Nút Bật / Tắt nhạc -->
+        <button id="music-toggle" class="music-toggle-btn" title="Bật/Tắt nhạc nền">
+            <i class="fa-solid fa-volume-xmark"></i>
+        </button>
+
+        <!-- File âm thanh (Đặt file music.mp3 cùng thư mục với index.html) -->
+        <audio id="bg-music" loop preload="auto">
+            <source src="music.mp3" type="audio/mpeg">
+        </audio>
+    </div>
     <div id="smooth-wrapper">
         <!-- PHẦN 1: HERO & HIỆU ỨNG ZOOM PORTAL -->
         <section class="section hero-section">
@@ -299,6 +323,94 @@
                 emailText.innerText = originalText;
             }, 2000);
         }
+        // 7. Xử lý Nhạc nền: Tự động Fade-in âm lượng & Đĩa than xoay
+        const bgMusic = document.getElementById('bg-music');
+        const musicToggle = document.getElementById('music-toggle');
+        const vinylDisk = document.getElementById('vinyl-disk');
+        const musicWidget = document.getElementById('music-widget');
+        const musicIcon = musicToggle.querySelector('i');
+
+        let isMusicPlaying = false;
+        let hasInteracted = false;
+        let fadeTween = null;
+        const TARGET_VOLUME = 0.7; // Âm lượng tối đa (70% để nghe dễ chịu)
+
+        // Hàm bật nhạc kèm hiệu ứng tăng dần âm lượng bằng GSAP
+        function playMusicWithFadeIn() {
+            bgMusic.volume = 0; // Bắt đầu từ 0
+            bgMusic.play().then(() => {
+                isMusicPlaying = true;
+                hasInteracted = true;
+                vinylDisk.classList.add('playing');
+                musicWidget.classList.add('active');
+                musicIcon.className = 'fa-solid fa-volume-high';
+
+                // Dùng GSAP tăng âm lượng mượt mà từ 0 lên 0.7 trong 3.5 giây
+                if (fadeTween) fadeTween.kill();
+                fadeTween = gsap.to(bgMusic, {
+                    volume: TARGET_VOLUME,
+                    duration: 3.5,
+                    ease: "power1.inOut"
+                });
+
+                // Gỡ bỏ các sự kiện chờ sau khi đã phát thành công
+                removeInteractionListeners();
+            }).catch(() => {
+                // Trình duyệt chặn autoplay, chờ thao tác đầu tiên của người dùng
+            });
+        }
+
+        // Hàm tắt nhạc kèm hiệu ứng giảm dần âm lượng (Fade-out)
+        function pauseMusicWithFadeOut() {
+            isMusicPlaying = false;
+            vinylDisk.classList.remove('playing');
+            musicWidget.classList.remove('active');
+            musicIcon.className = 'fa-solid fa-volume-xmark';
+
+            if (fadeTween) fadeTween.kill();
+            fadeTween = gsap.to(bgMusic, {
+                volume: 0,
+                duration: 0.8,
+                ease: "power1.out",
+                onComplete: () => {
+                    bgMusic.pause();
+                }
+            });
+        }
+
+        // Sự kiện nhấn nút Bật / Tắt thủ công
+        musicToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hasInteracted = true;
+            removeInteractionListeners();
+
+            if (isMusicPlaying) {
+                pauseMusicWithFadeOut();
+            } else {
+                playMusicWithFadeIn();
+            }
+        });
+
+        // Tự động kích hoạt nhạc ngay khi người dùng vào trang hoặc vừa cuộn chuột/click
+        function onFirstUserAction() {
+            if (!hasInteracted && !isMusicPlaying) {
+                playMusicWithFadeIn();
+            }
+        }
+
+        function removeInteractionListeners() {
+            window.removeEventListener('wheel', onFirstUserAction);
+            window.removeEventListener('touchstart', onFirstUserAction);
+            window.removeEventListener('click', onFirstUserAction);
+            window.removeEventListener('keydown', onFirstUserAction);
+        }
+
+        // Thử phát ngay khi tải trang, nếu trình duyệt chặn sẽ đợi thao tác cuộn đầu tiên
+        window.addEventListener('DOMContentLoaded', playMusicWithFadeIn);
+        window.addEventListener('wheel', onFirstUserAction, { passive: true });
+        window.addEventListener('touchstart', onFirstUserAction, { passive: true });
+        window.addEventListener('click', onFirstUserAction);
+        window.addEventListener('keydown', onFirstUserAction);
     </script>
 </body>
 </html>
